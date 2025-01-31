@@ -22,7 +22,7 @@ import {
 
 import { getAssetTooltip } from './_components/AssetToolTip';
 import { defaultCurrencies } from './_components/DefaultCurrencies';
-import { fetchExchangeRates } from './_components/FetchExchangeRates';
+import { fetchExchangeRates } from './_components/fetchExchangeRates';
 import { fetchMetalPrices } from './_components/FetchMetalPrice';
 import { formatCurrency } from './_components/FormatCurrency';
 import { LanguageSelector } from './_components/LanguageSelector';
