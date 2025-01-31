@@ -4,13 +4,15 @@ import { Calculator, HelpCircle, AlertCircle, Loader2, Globe, RefreshCw, Info } 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+
 import {
   Select,
   SelectContent,
   SelectItem,
-  SelectTrigger,
+  SelectTrigger, 
   SelectValue,
 } from "@/components/ui/select";
+
 import {
   Tooltip,
   TooltipContent,
@@ -19,10 +21,15 @@ import {
 } from "@/components/ui/tooltip";
 
 import { getAssetTooltip } from './_components/AssetToolTip';
+
 import { defaultCurrencies } from './_components/DefaultCurrencies';
+
 import { formatCurrency } from './_components/FormatCurrency';
+
 import { LanguageSelector } from './_components/LanguageSelector';
+
 import { RateManagementCard } from './_components/RateManagement';
+
 import { translations } from './_components/Translations';
 
 
