@@ -5,6 +5,24 @@ import { AlertCircle } from 'lucide-react';
 
 export const getDetailedZakatAnalysis = async (assets, totalAssets, nisabThreshold, currency) => {
   try {
+    // Filter out zero-value assets and format for the prompt
+    const filteredAssets = Object.entries(assets).reduce((acc, [key, value]) => {
+      if (value > 0) acc[key] = value;
+      return acc;
+    }, {});
+
+    // Handle case when no assets are provided
+    if (Object.keys(filteredAssets).length === 0) {
+      return {
+        generalAdvice: {
+          mainAdvice: "Please provide your asset details to calculate Zakat.",
+          specialConsiderations: []
+        },
+        calculations: { assetBreakdown: {} },
+        islamicReferences: { primaryHadith: "", scholarlyOpinions: [] }
+      };
+    }
+
     const prompt = {
       "model": "google/gemini-2.0-flash-thinking-exp:free",
       "messages": [
@@ -14,7 +32,7 @@ export const getDetailedZakatAnalysis = async (assets, totalAssets, nisabThresho
             {
               "type": "text",
               "text": `Analyze these zakat assets according to Islamic principles:\n` +
-                `Assets: ${JSON.stringify(assets)}\n` +
+                `Assets: ${JSON.stringify(filteredAssets)}\n` +
                 `Total Assets Value: ${totalAssets}\n` +
                 `Nisab Threshold: ${nisabThreshold}\n` +
                 `Currency: ${currency.code}\n\n` +
@@ -63,20 +81,25 @@ export const getDetailedZakatAnalysis = async (assets, totalAssets, nisabThresho
     return parseGeminiResponse(data);
   } catch (error) {
     console.error('Error in Zakat analysis:', error);
-    return null;
+    return {
+      generalAdvice: {
+        mainAdvice: "Error processing analysis. Please check your input and try again.",
+        specialConsiderations: []
+      },
+      calculations: { assetBreakdown: {} },
+      islamicReferences: { primaryHadith: "", scholarlyOpinions: [] }
+    };
   }
 };
 
 const parseGeminiResponse = (response) => {
   try {
-    // Handle different response structures
     const firstChoice = response.choices?.[0];
     if (!firstChoice) throw new Error('No choices in response');
     
     const content = firstChoice.message?.content;
     if (!content) throw new Error('Empty response content');
 
-    // Handle text content with optional JSON code block
     let jsonString = content;
     if (content.startsWith('```json')) {
       jsonString = content.match(/```json([\s\S]*?)```/)?.[1] || content;
@@ -84,20 +107,22 @@ const parseGeminiResponse = (response) => {
 
     const parsedData = JSON.parse(jsonString);
     
-    // Validate response structure
-    if (!parsedData.general_advice) throw new Error('Invalid response format');
-
+    // Validate and normalize response structure
     return {
       generalAdvice: {
-        mainAdvice: parsedData.general_advice,
-        specialConsiderations: parsedData.special_considerations || []
+        mainAdvice: parsedData.general_advice || "Standard zakat guidelines apply",
+        specialConsiderations: Array.isArray(parsedData.special_considerations) 
+          ? parsedData.special_considerations 
+          : []
       },
       calculations: {
         assetBreakdown: parsedData.calculations?.assetBreakdown || {}
       },
       islamicReferences: {
         primaryHadith: parsedData.islamic_references?.primary_hadith || "",
-        scholarlyOpinions: parsedData.islamic_references?.scholarly_opinions || []
+        scholarlyOpinions: Array.isArray(parsedData.islamic_references?.scholarly_opinions)
+          ? parsedData.islamic_references.scholarly_opinions
+          : []
       }
     };
   } catch (error) {
@@ -115,6 +140,10 @@ const parseGeminiResponse = (response) => {
 
 const ZakatAnalysisDisplay = ({ analysis, currency }) => {
   if (!analysis) return null;
+
+  const hasCalculations = Object.keys(analysis.calculations.assetBreakdown).length > 0;
+  const hasReferences = analysis.islamicReferences.primaryHadith || 
+                      analysis.islamicReferences.scholarlyOpinions.length > 0;
 
   return (
     <div className="space-y-6">
@@ -139,7 +168,7 @@ const ZakatAnalysisDisplay = ({ analysis, currency }) => {
       </Card>
 
       {/* Calculations Section */}
-      {analysis.calculations && (
+      {hasCalculations && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg font-semibold">Calculation Breakdown</CardTitle>
@@ -147,24 +176,26 @@ const ZakatAnalysisDisplay = ({ analysis, currency }) => {
           <CardContent>
             <div className="space-y-4">
               {Object.entries(analysis.calculations.assetBreakdown).map(([asset, calc]) => (
-                <div key={asset} className="border-b pb-4">
-                  <h4 className="font-medium capitalize">{asset}</h4>
-                  <p className="text-gray-600 mt-1">{calc.explanation}</p>
-                  <div className="mt-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Amount:</span>
-                      <span>{currency.symbol}{calc.amount?.toLocaleString() || 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Zakat Rate:</span>
-                      <span>{calc.rate}%</span>
-                    </div>
-                    <div className="flex justify-between font-medium">
-                      <span>Zakat Due:</span>
-                      <span>{currency.symbol}{calc.zakatDue?.toLocaleString() || 0}</span>
+                calc.amount > 0 && (
+                  <div key={asset} className="border-b pb-4">
+                    <h4 className="font-medium capitalize">{asset}</h4>
+                    <p className="text-gray-600 mt-1">{calc.explanation}</p>
+                    <div className="mt-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Amount:</span>
+                        <span>{currency.symbol}{calc.amount?.toLocaleString() || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Zakat Rate:</span>
+                        <span>{calc.rate}%</span>
+                      </div>
+                      <div className="flex justify-between font-medium">
+                        <span>Zakat Due:</span>
+                        <span>{currency.symbol}{calc.zakatDue?.toLocaleString() || 0}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )
               ))}
             </div>
           </CardContent>
@@ -172,7 +203,7 @@ const ZakatAnalysisDisplay = ({ analysis, currency }) => {
       )}
 
       {/* Islamic References Section */}
-      {analysis.islamicReferences && (
+      {hasReferences && (
         <Alert>
           <AlertCircle className="w-4 h-4" />
           <AlertDescription>
