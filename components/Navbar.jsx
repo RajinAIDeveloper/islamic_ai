@@ -153,6 +153,8 @@ const Navbar = () => {
                   onClick={() => {
                     if (!service.link) {
                       showUnderDevelopment();
+                    }else{
+                      router.push(service.link);
                     }
                     // Add navigation logic here for services with links
                   }}
@@ -264,6 +266,8 @@ const Navbar = () => {
                           if (!service.link) {
                             showUnderDevelopment();
                             setIsOpen(false);
+                          }else {
+                            router.push(service.link);
                           }
                           // Add navigation logic here for services with links
                         }}
