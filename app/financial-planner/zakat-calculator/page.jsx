@@ -25,7 +25,6 @@ import { defaultCurrencies } from './_components/DefaultCurrencies';
 import { fetchExchangeRates } from './_components/FetchExchangeRates';
 import { fetchMetalPrices } from './_components/FetchMetalPrice';
 import { formatCurrency } from './_components/FormatCurrency';
-import { getGeminiAnalysis } from './_components/getGeminiAnalysis';
 import { LanguageSelector } from './_components/LanguageSelector';
 import { RateManagementCard } from './_components/RateManagementCard';
 import { translations } from './_components/Translations';
